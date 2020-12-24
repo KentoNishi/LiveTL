@@ -220,7 +220,6 @@ getV = (src) => {
   return parseParams('?' + src.split('?')[1]).v;
 };
 
-let windowsWithBinds = {};
 
 const createWindow = async u => {
   return new Promise((res, rej) => {
@@ -229,6 +228,8 @@ const createWindow = async u => {
     });
   });
 };
+
+let alreadyListening = false;
 
 async function insertLiveTLButtons(isHolotools = false) {
   console.debug('Inserting LiveTL Launcher Buttons');
@@ -281,7 +282,8 @@ async function insertLiveTLButtons(isHolotools = false) {
           }
         });
         console.debug('Launched translation window for video', params.v);
-        if (!windowsWithBinds[params.v]) {
+        if (!alreadyListening) {
+          alreadyListening = true;
           window.addEventListener('message', m => {
             if (typeof m.data == 'object') {
               switch (m.data.type) {
@@ -292,7 +294,6 @@ async function insertLiveTLButtons(isHolotools = false) {
               }
             }
           });
-          windowsWithBinds[params.v] = true;
         }
       },
       'rgb(143, 143, 143)');
@@ -353,6 +354,9 @@ function injectScript(text) {
   document.head.appendChild(e);
 }
 
+function isEmbed() {
+  return window.location.href.startsWith('https://www.youtube.com/embed');
+}
 
 async function loaded() {
   // window.removeEventListener('load', loaded);
@@ -377,20 +381,21 @@ async function loaded() {
               if (args[0].url.startsWith('https://www.youtube.com/youtubei/v1/live_chat/get_live_chat')) {
                 let data = await (await result.clone()).json();
                 console.debug('Caught chunk', data);
-                window.dispatchEvent(new CustomEvent('chromeMessage', { detail: data }));
+                window.dispatchEvent(new CustomEvent('newMessageChunk', { detail: data }));
               }
               return result;
             } catch(e) {
-              console.log(e);
+              console.debug(e);
             }
           }
         `);
-        window.addEventListener('chromeMessage', async (response) => {
+        window.addEventListener('newMessageChunk', async (response) => {
           response = response.detail;
-          console.debug('chromeMessage event received', response);
+          response = JSON.parse(JSON.stringify(response));
+          console.debug('newMessageChunk event received', response);
           let messages = [];
           if (!response.continuationContents) {
-            console.log('Response was invalid', response);
+            console.debug('Response was invalid', response);
             return;
           }
           (response.continuationContents.liveChatContinuation.actions || []).forEach(action => {
@@ -420,7 +425,9 @@ async function loaded() {
                 timestamp: isReplayChat() ? messageItem.timestampText.simpleText : parseTimestamp(messageItem.timestampUsec)
               };
               messages.push(item);
-            } catch (e) { console.debug('Error while parsing:', e); }
+            } catch (e) {
+              console.debug('Error while parsing message.', { e });
+            }
           });
           let chunk = {
             type: 'messageChunk',
@@ -450,8 +457,19 @@ async function loaded() {
     } catch (e) {
       console.debug(e);
     }
+  } else if (isEmbed()) {
+    let initFullscreenButton = () => {
+      document.querySelector('.ytp-fullscreen-button').addEventListener('click', () => {
+        window.parent.postMessage({ type: 'fullscreen' }, '*');
+      });
+      document.querySelector('#movie_player>.ytp-generic-popup').style.opacity = '0';
+      window.removeEventListener('mousedown', initFullscreenButton);
+    };
+    if (isFirefox) window.addEventListener('mousedown', initFullscreenButton);
+    else initFullscreenButton();
   }
 }
+
 
 function parseTimestamp(timestamp) {
   return (new Date(parseInt(timestamp) / 1000)).toLocaleTimeString(navigator.language,
@@ -462,7 +480,7 @@ window.addEventListener('message', onMessageFromEmbeddedChat);
 window.addEventListener('load', loaded);
 window.addEventListener('yt-navigate-start', clearLiveTLButtons);
 
-if ((isVideo() || isChat()) && isFirefox) {
+if ((isVideo() || isChat() || isEmbed()) && isFirefox) {
   window.dispatchEvent(new Event('load'));
 }
 
