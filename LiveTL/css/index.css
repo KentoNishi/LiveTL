@@ -4,7 +4,6 @@
     --button-fill: #49deff;
     --resizable-width: calc(100% - 150px);
     --resizable-height: 80%;
-    --padding: 20px;
     color-scheme: light dark;
 }
 
@@ -98,20 +97,11 @@ body {
     background-color: transparent;
 }
 
-#bounding {
-    width: calc(100% + calc(2 * var(--padding)));
-    position: fixed;
-    top: calc(var(--padding) * -1);
-    left: calc(var(--padding) * -1);
-    height: calc(100% + calc(2 * var(--padding)));
-}
-
 #display {
-    width: calc(100% - calc(2 * var(--padding)));
-    height: calc(100% - calc(2 * var(--padding)));
+    width: 100%;
+    height: 100%;
     display: flex;
     overflow: hidden;
-    margin: var(--padding);
 }
 
 .ui-resizable-s {
@@ -167,10 +157,9 @@ body {
     height: fit-content;
     display: none;
     text-align: center;
+    padding: 20px;
     width: 25%;
     bottom: 50px;
-    padding: var(--padding);
-    z-index: 10000000;
 }
 
 .captionSegment {
@@ -181,8 +170,6 @@ body {
     background-color: rgba(0, 0, 0, 0.8);
     margin: 0;
     padding: 5px 10px;
-    animation-iteration-count: 1;
-    animation: splash 1s normal forwards ease-in-out;
 }
 
 #ltlcaptions>.ui-resizable-handle {
@@ -190,21 +177,14 @@ body {
     background-color: var(--primary);
     opacity: 0.5;
     width: 10px;
-    height: calc(100% - 2 * var(--padding));
-    top: var(--padding);
+    height: calc(100% - 40px);
+    top: 20px;
 }
 
 #ltlcaptions>.ui-resizable-handle.ui-resizable-e {
-    right: calc(var(--padding) - 5px);
+    transform: translateX(-20px);
 }
 
 #ltlcaptions>.ui-resizable-handle.ui-resizable-w {
-    left: calc(var(--padding) - 5px);
-}
-
-@keyframes splash {
-    from {
-        background-color: rgba(0, 119, 255, 0.8);
-    }
-    to {}
+    transform: translateX(20px);
 }

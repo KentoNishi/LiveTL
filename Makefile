@@ -1,3 +1,4 @@
+
 py = python3
 pip = ${py} -m pip
 pytest = ${py} -m pytest
@@ -24,7 +25,7 @@ replace-embed-domain=sed 's|EMBED_DOMAIN|"$(EMBED_DOMAIN)"|g'
 replace-embed-domain-noquote=sed 's|EMBED_DOMAIN|$(EMBED_DOMAIN)|g'
 replace-version=sed 's|VERSION|$(VERSION)|g'
 
-all: chrome firefox android
+all: chrome firefox
 
 .PHONY: init bench test chrome firefox android clean
 
@@ -134,13 +135,8 @@ android: chrome
 	cp -r build/chrome/LiveTL/* LiveTL-Android/app/src/main/assets/
 	cp LiveTL/js/lib/inject.js LiveTL-Android/app/src/main/assets/
 
-android-release: android
-	echo "import requests" | $(py) || $(pip) install requests
-	VERSION=$(VERSION) $(py) scripts/update_gradle_versions.py 
-
 common: init
-	cat $(lib)/constants.js $(lib)/../frame.js $(lib)/storage.js $(lib)/filter.js $(lib)/settings.js $(lib)/speech.js \
-	       	$(lib)/css.js $(lib)/svgs.js \
+	cat $(lib)/constants.js $(lib)/../frame.js $(lib)/storage.js $(lib)/filter.js $(lib)/settings.js $(lib)/css.js $(lib)/svgs.js \
 		| grep -v module.export | $(replace-embed-domain) \
 		> ./build/common/frame.js
 	$(replace-embed-domain) $(lib)/../index.js > ./build/common/index.js
